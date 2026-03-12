@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lunch Picker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f7f7f8;
+            color: #222;
+            min-height: 100vh;
+        }
+
+        header {
+            background: white;
+            padding: 28px 24px 20px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        header p {
+            color: #888;
+            margin-top: 4px;
+            font-size: 0.95rem;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 16px 24px;
+            background: white;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 7px 20px;
+            border: 1.5px solid #ddd;
+            border-radius: 50px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.15s;
+            color: #555;
+        }
+
+        .filter-btn:hover:not(.active) {
+            border-color: #ff6b35;
+            color: #ff6b35;
+        }
+
+        .filter-btn.active {
+            background: #ff6b35;
+            border-color: #ff6b35;
+            color: white;
+        }
+
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 14px;
+            padding: 24px;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .food-card {
+            background: white;
+            border-radius: 14px;
+            padding: 22px 12px 18px;
+            text-align: center;
+            cursor: pointer;
+            border: 2px solid transparent;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            user-select: none;
+        }
+
+        .food-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+        }
+
+        .food-card.selected {
+            border-color: #ff6b35;
+            background: #fff8f5;
+        }
+
+        .food-card.hidden {
+            display: none;
+        }
+
+        .food-card .emoji {
+            font-size: 2.6rem;
+            display: block;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+
+        .food-card .name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.3;
+        }
+
+        .badge {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 3px 9px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .badge.hot  { background: #fff0eb; color: #e85d04; }
+        .badge.cold { background: #e8f3ff; color: #1a73e8; }
+
+        /* Map section */
+        .map-section {
+            max-width: 860px;
+            margin: 0 auto 48px;
+            padding: 0 24px;
+            display: none;
+        }
+
+        .map-section.visible { display: block; }
+
+        .map-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .map-meta h2 {
+            font-size: 1.05rem;
+            font-weight: 600;
+        }
+
+        .map-meta .location-tag {
+            font-size: 0.82rem;
+            color: #888;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .map-wrap {
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            background: #eee;
+        }
+
+        .map-wrap iframe {
+            width: 100%;
+            height: 440px;
+            border: none;
+            display: block;
+        }
+
+        .open-gmaps {
+            display: block;
+            text-align: center;
+            margin-top: 12px;
+            padding: 13px;
+            background: #ff6b35;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.92rem;
+            transition: background 0.15s;
+        }
+
+        .open-gmaps:hover { background: #e5521e; }
+
+        .shuffle-btn {
+            display: block;
+            margin: 0 auto 8px;
+            padding: 10px 28px;
+            background: white;
+            border: 1.5px solid #ddd;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #555;
+            transition: all 0.15s;
+        }
+
+        .shuffle-btn:hover {
+            border-color: #ff6b35;
+            color: #ff6b35;
+        }
+
+        .shuffle-wrap {
+            text-align: center;
+            padding: 8px 24px 0;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🍱 Lunch Picker</h1>
+    <p>What are you feeling today?</p>
+</header>
+
+<div class="filters">
+    <button class="filter-btn active" data-filter="all">All</button>
+    <button class="filter-btn" data-filter="hot">🔥 Hot</button>
+    <button class="filter-btn" data-filter="cold">❄️ Cold</button>
+</div>
+
+<div class="shuffle-wrap">
+    <br>
+    <button class="shuffle-btn" id="shuffleBtn">🎲 Surprise me</button>
+</div>
+
+<div class="food-grid" id="foodGrid"></div>
+
+<div class="map-section" id="mapSection">
+    <div class="map-meta">
+        <h2 id="mapTitle"></h2>
+        <span class="location-tag">📍 Martin Place, Sydney · ~1km radius</span>
+    </div>
+    <div class="map-wrap">
+        <iframe id="mapFrame" src="" allowfullscreen loading="lazy"></iframe>
+    </div>
+    <a id="openMapsLink" href="#" target="_blank" class="open-gmaps">Open in Google Maps ↗</a>
+</div>
+
+<script>
+    const foods = [
+        { name: 'Sushi',                 emoji: '🍣', temp: 'cold', query: 'sushi restaurant near Martin Place Sydney NSW' },
+        { name: 'Korean Fried Chicken',  emoji: '🍗', temp: 'hot',  query: 'korean fried chicken near Martin Place Sydney NSW' },
+        { name: 'Ramen',                 emoji: '🍜', temp: 'hot',  query: 'ramen restaurant near Martin Place Sydney NSW' },
+        { name: 'Salad',                 emoji: '🥗', temp: 'cold', query: 'salad bar near Martin Place Sydney NSW' },
+        { name: 'Mexican',               emoji: '🌮', temp: 'hot',  query: 'mexican restaurant tacos nachos near Martin Place Sydney NSW' },
+        { name: 'Sandwich',              emoji: '🥪', temp: 'cold', query: 'sandwich shop near Martin Place Sydney NSW' },
+        { name: 'Soup',                  emoji: '🍲', temp: 'hot',  query: 'soup restaurant near Martin Place Sydney NSW' },
+        { name: 'Pasta',                 emoji: '🍝', temp: 'hot',  query: 'pasta restaurant near Martin Place Sydney NSW' },
+        { name: 'Banh Mi',               emoji: '🥖', temp: 'cold', query: 'banh mi near Martin Place Sydney NSW' },
+        { name: 'Rice Paper Rolls',      emoji: '🫚', temp: 'cold', query: 'rice paper rolls near Martin Place Sydney NSW' },
+        { name: 'Smoothie',              emoji: '🥤', temp: 'cold', query: 'smoothie bar near Martin Place Sydney NSW' },
+        { name: 'Chinese',               emoji: '🥡', temp: 'hot',  query: 'chinese restaurant near Martin Place Sydney NSW' },
+        { name: 'Kebab',                 emoji: '🥙', temp: 'hot',  query: 'kebab near Martin Place Sydney NSW' },
+        { name: 'Fish & Chips',          emoji: '🐟', temp: 'hot',  query: 'fish and chips near Martin Place Sydney NSW' },
+        { name: 'Schnitzel',             emoji: '🍖', temp: 'hot',  query: 'schnitzel near Martin Place Sydney NSW' },
+        { name: 'Burger',                emoji: '🍔', temp: 'hot',  query: 'burger near Martin Place Sydney NSW' },
+        { name: 'Ice Cream',             emoji: '🍦', temp: 'cold', query: 'ice cream near Martin Place Sydney NSW' },
+    ];
+
+    let activeFilter = 'all';
+    let selectedIdx = null;
+
+    const foodGrid    = document.getElementById('foodGrid');
+    const mapSection  = document.getElementById('mapSection');
+    const mapFrame    = document.getElementById('mapFrame');
+    const mapTitle    = document.getElementById('mapTitle');
+    const openMapsLink = document.getElementById('openMapsLink');
+
+    function renderCards() {
+        foodGrid.innerHTML = '';
+        foods.forEach((food, idx) => {
+            const hidden = activeFilter !== 'all' && food.temp !== activeFilter;
+            const card = document.createElement('div');
+            card.className = ['food-card', hidden ? 'hidden' : '', selectedIdx === idx ? 'selected' : ''].join(' ').trim();
+            card.innerHTML = `
+                <span class="emoji">${food.emoji}</span>
+                <div class="name">${food.name}</div>
+                <span class="badge ${food.temp}">${food.temp === 'hot' ? '🔥 Hot' : '❄️ Cold'}</span>
+            `;
+            card.addEventListener('click', () => selectFood(idx));
+            foodGrid.appendChild(card);
+        });
+    }
+
+    function selectFood(idx) {
+        selectedIdx = idx;
+        const food = foods[idx];
+        const q = encodeURIComponent(food.query);
+
+        mapFrame.src = `https://maps.google.com/maps?q=${q}&output=embed&z=15`;
+        mapTitle.textContent = `${food.emoji} ${food.name} near Martin Place`;
+        openMapsLink.href = `https://www.google.com/maps/search/?api=1&query=${q}`;
+
+        mapSection.classList.add('visible');
+        renderCards();
+
+        setTimeout(() => mapSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 120);
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            activeFilter = btn.dataset.filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedIdx = null;
+            mapSection.classList.remove('visible');
+            renderCards();
+        });
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', () => {
+        const visible = foods.map((f, i) => i).filter(i =>
+            activeFilter === 'all' || foods[i].temp === activeFilter
+        );
+        if (!visible.length) return;
+        const pick = visible[Math.floor(Math.random() * visible.length)];
+        selectFood(pick);
+    });
+
+    renderCards();
+</script>
+</body>
+</html>
